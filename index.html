@@ -242,6 +242,10 @@
   canvas#webgl { transform: scale(1.08); transition: transform 2s cubic-bezier(.16,1,.3,1); }
   body.entered canvas#webgl { transform: none; }
 
+  /* Táctil: el carrusel recibe los swipes, el navegador no hace scroll/zoom/back */
+  html, body { touch-action: none; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+  canvas#webgl, #intro { touch-action: none; }
+
   /* HUD final */
   .avail { display: flex; align-items: center; gap: 10px; }
   .avail i { width: 7px; height: 7px; border-radius: 50%; background: #3dffc4; box-shadow: 0 0 0 0 rgba(61,255,196,.6); animation: availPulse 2s ease-out infinite; }
@@ -324,7 +328,9 @@
     setTimeout(() => intro.remove(), 1100);
   }
   window.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); enter(); } });
-  document.getElementById('enterBtn').addEventListener('click', enter);
+  const enterBtn = document.getElementById('enterBtn');
+  if (window.matchMedia('(hover: none)').matches) enterBtn.innerHTML = '<span>Tap to enter</span>';
+  enterBtn.addEventListener('click', enter);
 })();
 </script>
 
@@ -1140,6 +1146,7 @@ let scrollVelocity = 0;
 let smoothedVelocity = 0;
 let isPointerDown = false;
 let lastPointerX = 0;
+let lastPointerY = 0;
 
 // Wheel con inercia controlada
 window.addEventListener('wheel', (e) => {
@@ -1151,12 +1158,17 @@ window.addEventListener('pointerdown', (e) => {
   if (e.target.closest('#controlsPanel') || e.target.closest('#toggleControls')) return;
   isPointerDown = true;
   lastPointerX = e.clientX;
+  lastPointerY = e.clientY;
 });
 
 window.addEventListener('pointermove', (e) => {
   if (!isPointerDown) return;
-  const delta = lastPointerX - e.clientX;
+  const dx = lastPointerX - e.clientX;
+  const dy = lastPointerY - e.clientY;
   lastPointerX = e.clientX;
+  lastPointerY = e.clientY;
+  // En táctil, deslizar hacia arriba también avanza (como scrollear)
+  const delta = (e.pointerType === 'touch' && Math.abs(dy) > Math.abs(dx)) ? dy : dx;
   scrollTarget += delta * 1.4;
 });
 
