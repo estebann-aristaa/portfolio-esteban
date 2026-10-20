@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="modulepreload" href="https://unpkg.com/three@0.160.0/build/three.module.js">
+<link rel="preload" as="image" href="hotel.png" fetchpriority="high">
+<link rel="preload" as="image" href="arlo.png" fetchpriority="high">
+<link rel="preload" as="image" href="petnova.png" fetchpriority="high">
+<link rel="preload" as="image" href="showmeco.png" fetchpriority="high">
+<title>Esteban A.P — Portfolio</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #fff;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas#webgl {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+  }
+  canvas#webgl:active {
+    cursor: grabbing;
+  }
+
+  /* ── HUD superior e inferior exacto al de Jesper ── */
+  .hud-top {
+    position: fixed;
+    top: 32px;
+    left: 40px;
+    right: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .hud-bottom {
+    position: fixed;
+    bottom: 32px;
+    left: 40px;
+    right: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .clickable {
+    pointer-events: auto;
+    cursor: pointer;
+    color: #fff;
+    text-decoration: none;
+    transition: opacity 0.3s ease;
+  }
+  .clickable:hover {
+    opacity: 0.6;
+  }
+  .dimmed {
+    opacity: 0.45;
+  }
+  .sep {
+    margin: 0 4px;
+    opacity: 0.3;
+  }
+
+  /* ── Controles minimizables ── */
+  .panel-toggle {
+    position: fixed;
+    top: 28px;
+    right: 140px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #fff;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    z-index: 101;
+    backdrop-filter: blur(8px);
+    transition: all 0.2s;
+  }
+  .panel-toggle:hover {
+    background: rgba(255,255,255,0.18);
+  }
+  .controls {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: rgba(10, 10, 10, 0.90);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    padding: 16px;
+    font-size: 10px;
+    z-index: 100;
+    backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 230px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .controls.hidden {
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+  }
+  .controls-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #aaa;
+    border-bottom: 1px solid #222;
+    padding-bottom: 6px;
+  }
+  .controls label {
+    display: flex;
+    justify-content: space-between;
+    color: #888;
+    margin-bottom: 3px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .controls input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 2px;
+    background: #2a2a2a;
+    border-radius: 2px;
+    outline: none;
+  }
+  .controls input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 11px;
+    height: 11px;
+    background: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .controls .v {
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ══════════ INTRO ══════════ */
+  #intro {
+    --accent-a: #3dffc4; --accent-b: #0fa57e; --accent-c: #06382c;
+    position: fixed; inset: 0; z-index: 1000; overflow: hidden;
+    background: #0b0b0a;
+    transition: opacity 1s ease, visibility 1s;
+  }
+  #intro.out { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  .i-grad { color: #ece9e2; }
+
+  /* PORTFOLIO gigante, centrado */
+  .i-stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-bottom: 10vh; }
+  .i-title {
+    font-family: 'Anton', Impact, 'Arial Narrow', sans-serif; font-weight: 400;
+    font-size: min(21vw, 52vh); line-height: .92; letter-spacing: .01em;
+    white-space: nowrap; text-transform: uppercase; text-align: center;
+    opacity: 0; transform: translateY(24px);
+    animation: iIn 1.2s cubic-bezier(.16,1,.3,1) .15s forwards;
+  }
+
+  /* Foto al frente, anclada abajo y centrada */
+  .i-photo-wrap { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; pointer-events: none; }
+  .i-photo {
+    height: min(80vh, 125vw); aspect-ratio: 4 / 5; object-fit: cover; display: block;
+    filter: grayscale(1) contrast(1.08);
+    -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 58%, transparent 100%);
+            mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 58%, transparent 100%);
+    opacity: 0; transform: translateY(30px);
+    animation: iIn 1.3s cubic-bezier(.16,1,.3,1) .4s forwards;
+  }
+
+  /* Fila inferior simétrica: izquierda | centro | derecha */
+  .i-bottom {
+    position: absolute; left: 40px; right: 40px; bottom: 36px; z-index: 3;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 24px;
+  }
+  .i-left { justify-self: start; }
+  .i-right { justify-self: end; text-align: right; }
+  .i-hello { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 400; font-size: clamp(16px, 1.7vw, 26px); color: rgba(255,255,255,.7); margin-bottom: 6px; }
+  .i-me, .i-role {
+    font-family: 'Anton', Impact, 'Arial Narrow', sans-serif; text-transform: uppercase;
+    font-size: clamp(30px, 4.6vw, 76px); line-height: .95; letter-spacing: .01em;
+  }
+  .i-role { font-size: clamp(22px, 3vw, 48px); color: #fff; }
+  .i-tags { margin-top: 10px; display: flex; gap: 6px 18px; justify-content: flex-end; flex-wrap: wrap; font-size: clamp(11px, 1.05vw, 15px); font-weight: 500; color: rgba(255,255,255,.85); }
+  .i-tags span::before { content: '•'; margin-right: 6px; color: rgba(255,255,255,.4); }
+
+  .i-left, .i-right, .i-enter { opacity: 0; animation: iIn 1s ease 1.1s forwards; }
+  .i-enter {
+    justify-self: center; background: none; border: 0; color: rgba(255,255,255,.75); font: inherit;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer;
+    display: flex; align-items: center; gap: 10px; transition: color .3s; padding-bottom: 6px;
+  }
+  .i-enter:hover { color: #fff; }
+  .i-enter .kbd { border: 1px solid rgba(255,255,255,.4); border-radius: 4px; padding: 4px 8px; }
+  @keyframes iIn { to { opacity: 1; transform: none; } }
+
+  @media (max-width: 760px) {
+    .i-bottom { left: 20px; right: 20px; bottom: 28px; grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 18px; }
+    .i-left, .i-right { justify-self: center; text-align: center; }
+    .i-right { display: none; }
+    .i-stage { padding-bottom: 22vh; }
+    .i-photo { height: min(58vh, 125vw); }
+  }
+
+  /* HUD y carrusel aparecen al entrar */
+  .hud-top, .hud-bottom { opacity: 0; transition: opacity 1.2s ease .4s; }
+  body .panel-toggle { opacity: 0; transition: opacity 1.2s ease .4s, background .2s; }
+  body.entered .hud-top, body.entered .hud-bottom, body.entered .panel-toggle { opacity: 1; }
+
+  canvas#webgl { transform: scale(1.08); transition: transform 2s cubic-bezier(.16,1,.3,1); }
+  body.entered canvas#webgl { transform: none; }
+
+  /* HUD final */
+  .avail { display: flex; align-items: center; gap: 10px; }
+  .avail i { width: 7px; height: 7px; border-radius: 50%; background: #3dffc4; box-shadow: 0 0 0 0 rgba(61,255,196,.6); animation: availPulse 2s ease-out infinite; }
+  @keyframes availPulse { 0% { box-shadow: 0 0 0 0 rgba(61,255,196,.55); } 100% { box-shadow: 0 0 0 10px rgba(61,255,196,0); } }
+  .hud-tags { display: flex; gap: 6px 18px; flex-wrap: wrap; }
+  .hud-tags span::before { content: '•'; margin-right: 6px; color: rgba(255,255,255,.4); }
+  #hudCount { font-variant-numeric: tabular-nums; }
+  #hudCount b { font-weight: 600; }
+  @media (max-width: 650px) { #hudCount { display: none; } }
+</style>
+</head>
+<body>
+
+<div id="intro">
+  <div class="i-stage"><h1 class="i-title i-grad">Portfolio</h1></div>
+
+  <div class="i-photo-wrap">
+    <img class="i-photo" src="fotoesteban.jpg" alt="Esteban A.P" onerror="this.style.display='none'">
+  </div>
+
+  <div class="i-bottom">
+    <div class="i-left">
+      <p class="i-hello">Hello, I'm</p>
+      <p class="i-me i-grad">Esteban A.P</p>
+    </div>
+    <button id="enterBtn" class="i-enter"><span class="kbd">Enter</span><span>to continue</span></button>
+    <div class="i-right">
+      <p class="i-role">Web Designer</p>
+      <div class="i-tags"><span>Websites</span><span>WebGL</span><span>Motion</span></div>
+    </div>
+  </div>
+</div>
+
+<canvas id="webgl"></canvas>
+
+<div class="hud-top">
+  <a class="clickable" href="#">ESTEBAN A.P</a>
+  <span>© 2026</span>
+</div>
+
+<div class="hud-bottom">
+  <div class="hud-tags"><span>Websites</span><span>WebGL</span><span>Motion</span></div>
+  <span id="hudCount"><b>01</b> / 04 — Aurelia Real State</span>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+
+
+<script>
+(function () {
+  const intro = document.getElementById('intro');
+  let done = false;
+
+  // "PORTFOLIO" se ajusta al ancho de la pantalla con cualquier fuente (aunque Anton no cargue)
+  const title = intro.querySelector('.i-title');
+  function fitTitle() {
+    if (!title.isConnected) return;
+    title.style.fontSize = '100px';
+    const w = title.getBoundingClientRect().width || 1;
+    const size = Math.min(100 * (window.innerWidth * 0.9) / w, window.innerHeight * 0.52);
+    title.style.fontSize = size + 'px';
+  }
+  fitTitle();
+  window.addEventListener('resize', fitTitle);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTitle);
+  // Mientras la intro está arriba, el carrusel no reacciona al scroll/drag
+  ['wheel', 'pointerdown', 'pointermove', 'pointerup', 'pointercancel'].forEach(t =>
+    intro.addEventListener(t, e => e.stopPropagation(), { passive: true }));
+
+  function enter() {
+    if (done) return; done = true;
+    intro.classList.add('out');
+    document.body.classList.add('entered');
+    setTimeout(() => intro.remove(), 1100);
+  }
+  window.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); enter(); } });
+  document.getElementById('enterBtn').addEventListener('click', enter);
+})();
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ── 1. RENDERER & CÁMARA (Fov y Z calibrados al bundle de Jesper) ── */
+const canvas = document.getElementById('webgl');
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: true,
+  alpha: true,
+  powerPreference: 'high-performance'
+});
+renderer.autoClear = false;
+renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+renderer.setClearColor(0x000000, 1);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+const scene = new THREE.Scene();
+
+// Cámara idéntica a Jesper: FOV 53.4, Z = 41.18
+const camera = new THREE.PerspectiveCamera(53.4, window.innerWidth / window.innerHeight, 0.1, 2000);
+camera.position.set(0, 0, 41.18);
+camera.lookAt(0, 0, 0);
+
+/* ── 2. CONSTANTES EXACTAS DEL SHEET DE JESPER LANDBERG ── */
+const CFG = {
+  depth: 0.18,       // Profundidad en S (moderada para evitar que la card se acerque demasiado)
+  span: 1.15,        // $F = 1.15 (extensión de la onda)
+  door: -0.10,       // ZF = -0.10 (inclinación de bisagra)
+  bank: -0.16,       // SHEET_BANK = -0.16 (inclinación de pista)
+  diag: 0.025,       // SHEET_DIAG = 0.025 (subida diagonal sutil)
+  vtwist: 0.35,      // Torsión elástica limitada (para no deformar la imagen en scroll rápido)
+  dent: 0.08,        // Hundimiento cóncavo al hacer hover
+  cardHFrac: 0.55,   // 55% de la altura de la pantalla (proporción real vista en las fotos)
+  cardAspect: 1.55,  // Ancho / Alto de cada card
+  grid: 0.08,
+  refl: 0.45,
+  reflSpread: 0.35,
+  reflLight: 0.6,
+  drop: 0.06,
+  run: 6.0,
+  wide: 4.0,
+  cell: 0.22,
+  lip: 0.2
+};
+
+/* ── 3. VERTEX SHADER DEFORMADOR DE CINTA S-CURVE ── */
+const CARD_VERTEX_SHADER = `
+const float SHEET_PI = 3.141592653589793;
+const float SHEET_TAIL = 1.0;
+const float SHEET_SHIFT = -0.2;
+
+uniform vec2 u_res;
+uniform float u_sheetW;
+uniform float u_sheetD;
+uniform float u_sheetT;
+uniform float u_sheetC;
+uniform float u_sheetP;
+uniform float u_sheetV;
+uniform float u_hover;
+uniform float u_dent;
+uniform float u_leanA;
+uniform float u_leanW;
+uniform float u_cfgBank;
+uniform float u_cfgDiag;
+uniform float u_cfgVtwist;
+
+varying vec2 vUv;
+varying vec3 vFlat;
+
+float sheetQ(float wx) {
+  return wx / max(u_sheetW, 0.0001) * u_sheetT + SHEET_SHIFT;
+}
+
+float sheetShape(float q) {
+  return mix(1.0 - q * q, sin(SHEET_PI * q), u_sheetC) * exp(-SHEET_TAIL * q * q);
+}
+
+float sheetShapeSlope(float q) {
+  float g = exp(-SHEET_TAIL * q * q);
+  float bowl = -2.0 * q * (1.0 + SHEET_TAIL * (1.0 - q * q));
+  float ess = SHEET_PI * cos(SHEET_PI * q) - 2.0 * SHEET_TAIL * q * sin(SHEET_PI * q);
+  return mix(bowl, ess, u_sheetC) * g;
+}
+
+float sheetZ(float wx) {
+  return -u_sheetD * sheetShape(sheetQ(wx));
+}
+
+float sheetRoll(float wx) {
+  if (u_sheetW < 0.001) return 0.0;
+  return u_cfgBank * sheetShapeSlope(sheetQ(wx)) / SHEET_PI * u_sheetC * u_sheetP;
+}
+
+vec4 sheetWind(vec4 w) {
+  float a = sheetRoll(w.x);
+  if (u_sheetV > 0.001 && u_sheetW > 0.001 && u_sheetP > 0.001) {
+    float qe = w.x / u_sheetW;
+    a += u_cfgVtwist * u_sheetV * smoothstep(0.3, 0.9, abs(qe)) * sign(qe) * u_sheetP;
+  }
+  if (abs(a) < 0.0001) return w;
+  float s = sin(a);
+  float c = cos(a);
+  return vec4(w.x, w.y * c - w.z * s, w.y * s + w.z * c, w.w);
+}
+
+vec4 sheet(vec4 w) {
+  w = sheetWind(w);
+  w.z += sheetZ(w.x) * u_sheetP;
+
+  if (u_sheetW > 0.001) {
+    w.y += u_cfgDiag * w.x * u_sheetP;
+    if (u_sheetV > 0.001) {
+      float qw = w.x / u_sheetW;
+      float m = 1.0 - smoothstep(-1.0, 0.3, qw);
+      w.y += 0.06 * u_sheetW * u_sheetV * m * u_sheetP;
+      w.z += 0.08 * u_sheetW * u_sheetV * m * u_sheetP;
+    }
+  }
+  return w;
+}
+
+float leanRamp(float s) {
+  s = clamp(s, -1.0, 1.0);
+  return s * (1.5 - 0.5 * s * s);
+}
+
+vec4 lean(vec4 w, float k) {
+  if (u_leanW > 0.001 && k > 0.001) {
+    w.z += u_leanA * leanRamp(w.x / u_leanW) * k;
+  }
+  return w;
+}
+
+float sheetDome(vec2 uv) {
+  vec2 q = uv * 2.0 - 1.0;
+  return (1.0 - q.x * q.x) * (1.0 - q.y * q.y);
+}
+
+void main() {
+  vUv = uv;
+  vFlat = (modelMatrix * vec4(position, 1.0)).xyz;
+
+  vec3 p = position;
+  if (u_hover > 0.0001) {
+    p.z -= u_hover * u_dent * u_res.y * sheetDome(uv);
+  }
+
+  vec4 w = modelMatrix * vec4(p, 1.0);
+  w = sheet(w);
+  w = lean(w, u_sheetP);
+
+  gl_Position = projectionMatrix * viewMatrix * w;
+}
+`;
+
+/* ── 4. FRAGMENT SHADER CON NORMALES ANALÍTICAS, GLOSS Y SOMBRA ATMOSFÉRICA ── */
+const CARD_FRAGMENT_SHADER = `
+uniform sampler2D u_texture;
+uniform vec2 u_size;
+uniform vec2 u_res;
+uniform float u_alpha;
+uniform float u_shade;
+uniform float u_shadeS;
+uniform float u_corner;
+uniform float u_scrim;
+uniform float u_hover;
+uniform float u_dent;
+uniform float u_sheetW;
+uniform float u_sheetD;
+uniform float u_sheetT;
+uniform float u_sheetC;
+uniform float u_sheetP;
+uniform float u_leanA;
+uniform float u_leanW;
+uniform float u_cfgBank;
+
+varying vec2 vUv;
+varying vec3 vFlat;
+
+const float SHEET_PI = 3.141592653589793;
+const float SHEET_TAIL = 1.0;
+const float SHEET_SHIFT = -0.2;
+
+const vec3 LIGHT_DIR = normalize(vec3(-0.4, 0.5, 1.0));
+const float LIGHT_GLOSS = 48.0;
+const float LIGHT_SPEC = 0.35;
+const float LIGHT_DIFF = 0.12;
+
+vec2 uvCover(vec2 planeSize, vec2 imageSize, vec2 uv) {
+  float planeRatio = planeSize.x / planeSize.y;
+  float imageRatio = imageSize.x / imageSize.y;
+
+  vec2 newSize = planeRatio < imageRatio
+    ? vec2(imageSize.x * (planeSize.y / imageSize.y), planeSize.y)
+    : vec2(planeSize.x, imageSize.y * (planeSize.x / imageSize.x));
+  vec2 newOffset = (planeRatio < imageRatio
+    ? vec2((newSize.x - planeSize.x) / 2.0, 0.0)
+    : vec2(0.0, (newSize.y - planeSize.y) / 2.0)) / newSize;
+
+  return uv * planeSize / newSize + newOffset;
+}
+
+float roundedBox(vec2 p, vec2 mid, float r) {
+  vec2 q = abs(p - mid) - (mid - r);
+  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+}
+
+float sheetDome(vec2 uv) {
+  vec2 q = uv * 2.0 - 1.0;
+  return (1.0 - q.x * q.x) * (1.0 - q.y * q.y);
+}
+
+float sheetQ(float wx) {
+  return wx / max(u_sheetW, 0.0001) * u_sheetT + SHEET_SHIFT;
+}
+
+float sheetShape(float q) {
+  return mix(1.0 - q * q, sin(SHEET_PI * q), u_sheetC) * exp(-SHEET_TAIL * q * q);
+}
+
+float sheetShapeSlope(float q) {
+  float g = exp(-SHEET_TAIL * q * q);
+  float bowl = -2.0 * q * (1.0 + SHEET_TAIL * (1.0 - q * q));
+  float ess = SHEET_PI * cos(SHEET_PI * q) - 2.0 * SHEET_TAIL * q * sin(SHEET_PI * q);
+  return mix(bowl, ess, u_sheetC) * g;
+}
+
+float sheetZ(float wx) {
+  return -u_sheetD * sheetShape(sheetQ(wx));
+}
+
+float sheetRoll(float wx) {
+  if (u_sheetW < 0.001) return 0.0;
+  return u_cfgBank * sheetShapeSlope(sheetQ(wx)) / SHEET_PI * u_sheetC * u_sheetP;
+}
+
+float leanRamp(float s) {
+  s = clamp(s, -1.0, 1.0);
+  return s * (1.5 - 0.5 * s * s);
+}
+
+float leanSlope(float s) {
+  s = min(abs(s), 1.0);
+  return 1.5 * (1.0 - s * s);
+}
+
+float sheetShade(float wx, vec2 uv, float resY) {
+  if (u_sheetD < 0.001) return 0.0;
+  float d = u_sheetW > 0.001 && u_sheetP > 0.001
+    ? clamp((u_sheetD - sheetZ(wx)) / (2.0 * u_sheetD), 0.0, 1.0) * u_sheetP
+    : 0.0;
+  if (u_hover > 0.0001) {
+    d += (u_hover * u_dent * resY * sheetDome(uv)) / (2.0 * u_sheetD);
+  }
+  return clamp(d, 0.0, 1.0);
+}
+
+float sheetOffset(float wx, vec2 uv, float resY) {
+  float z = 0.0;
+  if (u_sheetW > 0.001 && u_sheetP > 0.001 && u_sheetD > 0.001) z += sheetZ(wx) * u_sheetP;
+  if (u_leanW > 0.001) z += u_leanA * leanRamp(wx / u_leanW) * u_sheetP;
+  if (u_hover > 0.0001) z -= u_hover * u_dent * resY * sheetDome(uv);
+  return z;
+}
+
+vec3 sheetNormal(float wx, vec2 uv, vec2 res) {
+  float dzdx = 0.0;
+  float dzdy = 0.0;
+
+  if (u_sheetW > 0.001 && u_sheetP > 0.001 && u_sheetD > 0.001) {
+    dzdx += -u_sheetD * sheetShapeSlope(sheetQ(wx)) * u_sheetT / u_sheetW * u_sheetP;
+  }
+  if (u_leanW > 0.001) {
+    dzdx += (u_leanA / u_leanW) * leanSlope(wx / u_leanW) * u_sheetP;
+  }
+  if (u_hover > 0.0001) {
+    vec2 q = uv * 2.0 - 1.0;
+    float a = u_hover * u_dent;
+    dzdx += 4.0 * a * res.y * q.x * (1.0 - q.y * q.y) / max(res.x, 0.0001);
+    dzdy += 4.0 * a * q.y * (1.0 - q.x * q.x);
+  }
+
+  vec3 n = normalize(vec3(-dzdx, -dzdy, 1.0));
+  float a = sheetRoll(wx);
+  if (abs(a) > 0.0001) {
+    float s = sin(a);
+    float c = cos(a);
+    n = vec3(n.x, n.y * c - n.z * s, n.y * s + n.z * c);
+  }
+  return n;
+}
+
+vec3 sheetLit(vec3 col, vec3 n, vec3 v, float amt) {
+  if (amt < 0.001) return col;
+  float d = dot(n, LIGHT_DIR) * 0.5 + 0.5;
+  col *= 1.0 - LIGHT_DIFF * amt * (1.0 - d);
+  vec3 h = normalize(LIGHT_DIR + v);
+  return col + pow(max(dot(n, h), 0.0), LIGHT_GLOSS) * LIGHT_SPEC * amt;
+}
+
+void main() {
+  vec4 tex = texture2D(u_texture, uvCover(u_res, u_size, vUv));
+
+  // Depth shade: neblina atmosférica (mix hacia 0.059) + specular gloss
+  if (u_shade > 0.001) {
+    float depth = sheetShade(vFlat.x, vUv, u_res.y);
+    tex.rgb = mix(tex.rgb, vec3(0.059), u_shade * 0.75 * pow(depth, u_shadeS));
+
+    vec3 p = vFlat + vec3(0.0, 0.0, sheetOffset(vFlat.x, vUv, u_res.y));
+    tex.rgb = sheetLit(
+      tex.rgb,
+      sheetNormal(vFlat.x, vUv, u_res),
+      normalize(cameraPosition - p),
+      u_shade
+    );
+  }
+
+  // Scrim oscuro en la base para legibilidad del texto
+  if (u_scrim > 0.001) {
+    float g = 1.0 - smoothstep(0.0, 0.45, vUv.y);
+    tex.rgb = mix(tex.rgb, vec3(0.0), u_scrim * 0.60 * g * g);
+  }
+
+  // Borde redondeado suave (SDF antialiased)
+  float alpha = u_alpha;
+  if (u_corner > 0.0001) {
+    vec2 sz = vec2(u_res.x / max(u_res.y, 0.0001), 1.0);
+    vec2 mid = sz * 0.5;
+    float r = min(u_corner, min(mid.x, mid.y));
+    float d = roundedBox(vUv * sz, mid, r);
+    float aa = max(fwidth(d), 0.0001);
+    alpha *= 1.0 - smoothstep(-aa, aa, d);
+  }
+
+  gl_FragColor = vec4(tex.rgb, alpha);
+}
+`;
+
+/* ── 5. SUELO / RETÍCULA CON REFLEJO ESPECULAR ── */
+const FLOOR_VERT = `
+uniform float u_leanK;
+uniform float u_run;
+uniform float u_leanA;
+uniform float u_leanW;
+
+varying vec2 vUv;
+varying vec3 vWorld;
+varying float vFar;
+
+float leanRamp(float s) {
+  s = clamp(s, -1.0, 1.0);
+  return s * (1.5 - 0.5 * s * s);
+}
+
+vec4 lean(vec4 w, float k) {
+  if (u_leanW > 0.001 && k > 0.001) {
+    w.z += u_leanA * leanRamp(w.x / u_leanW) * k;
+  }
+  return w;
+}
+
+void main() {
+  vUv = uv;
+  vec4 w = modelMatrix * vec4(position, 1.0);
+  vFar = -w.z / max(u_run, 0.0001);
+  w = lean(w, u_leanK);
+  vWorld = w.xyz;
+  gl_Position = projectionMatrix * viewMatrix * w;
+}
+`;
+
+const FLOOR_FRAG = `
+uniform vec3 u_c0;
+uniform vec3 u_c1;
+uniform float u_alpha;
+uniform float u_grid;
+uniform vec2 u_gridF;
+uniform sampler2D u_refl;
+uniform float u_reflA;
+uniform mat4 u_reflVP;
+uniform float u_reflSpread;
+uniform float u_reflLX;
+
+varying vec2 vUv;
+varying vec3 vWorld;
+varying float vFar;
+
+void main() {
+  float fade = 1.0 - smoothstep(0.2, 0.95, vFar);
+  float contact = exp(-abs(vFar) * 14.0);
+
+  vec3 col = mix(u_c1, u_c0, smoothstep(0.0, 0.8, vFar));
+  col *= 1.0 - contact * 0.55;
+
+  vec2 g = vec2(vUv.x * u_gridF.x, vFar * u_gridF.y);
+  vec2 gf = abs(fract(g) - 0.5);
+  vec2 gw = fwidth(g) * 1.5;
+
+  vec2 lines = vec2(1.0) - smoothstep(vec2(0.0), gw, gf);
+  float line = max(lines.x, lines.y);
+
+  col += line * u_grid * fade;
+
+  // Reflejo planar real en las líneas del suelo
+  if (u_reflA > 0.001) {
+    vec3 wp = vWorld;
+    wp.x -= (vWorld.x - u_reflLX) * u_reflSpread * abs(vFar);
+
+    vec4 rp = u_reflVP * vec4(wp, 1.0);
+    vec2 ruv = (rp.xy / max(rp.w, 0.0001)) * 0.5 + 0.5;
+
+    vec2 soft = smoothstep(vec2(0.0), vec2(0.1), ruv)
+      * (vec2(1.0) - smoothstep(vec2(0.9), vec2(1.0), ruv));
+    float ok = soft.x * soft.y;
+
+    vec3 refl = texture2D(u_refl, ruv).rgb;
+    float fall = exp(-((vFar > 0.0) ? vFar * 6.0 : -vFar * 2.2));
+
+    col += refl * line * u_reflA * fall * ok * fade;
+  }
+
+  gl_FragColor = vec4(col, u_alpha * fade);
+}
+`;
+
+const floorGeo = new THREE.PlaneGeometry(1, 1, 48, 24);
+floorGeo.rotateX(-Math.PI / 2);
+
+const floorMat = new THREE.ShaderMaterial({
+  vertexShader: FLOOR_VERT,
+  fragmentShader: FLOOR_FRAG,
+  uniforms: {
+    u_leanK:      { value: 1.0 },
+    u_run:        { value: 1.0 },
+    u_leanA:      { value: 0.0 },
+    u_leanW:      { value: 1.0 },
+    u_c0:         { value: new THREE.Color(0x000000) },
+    u_c1:         { value: new THREE.Color(0x000000) },
+    u_alpha:      { value: 0.90 },
+    u_grid:       { value: CFG.grid },
+    u_gridF:      { value: new THREE.Vector2(1, 1) },
+    u_refl:       { value: null },
+    u_reflA:      { value: CFG.refl },
+    u_reflVP:     { value: new THREE.Matrix4() },
+    u_reflSpread: { value: CFG.reflSpread },
+    u_reflLX:     { value: 0.0 }
+  },
+  transparent: true,
+  depthTest: false,
+  depthWrite: false,
+  side: THREE.DoubleSide
+});
+
+const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+scene.add(floorMesh);
+
+// Buffer de reflejo de 1/10 resolución
+const reflW = Math.max(1, Math.round(window.innerWidth * 0.1));
+const reflH = Math.max(1, Math.round(window.innerHeight * 0.1));
+const reflectTarget = new THREE.WebGLRenderTarget(reflW, reflH, {
+  minFilter: THREE.LinearFilter,
+  magFilter: THREE.LinearFilter,
+  colorSpace: THREE.LinearSRGBColorSpace
+});
+floorMat.uniforms.u_refl.value = reflectTarget.texture;
+
+const reflectCamera = camera.clone();
+
+/* ── 6. CARDS EXACTAS DE TU SECUENCIA DE FOTOS (1:1 CON JESPER) ── */
+/* ─────────────────────────────────────────────────────────────
+   TUS PÁGINAS: para cada card pon
+     image: 'mipagina.png'        → captura de la página (ideal 2048×1320, proporción 1.55)
+     url:   'https://mipagina.com' → a dónde redirige al hacer click
+     fit:   'top'                  → (opcional) alinea la captura arriba en vez de al centro
+   Si no pones image/url, la card se queda con el diseño de ejemplo.
+   ───────────────────────────────────────────────────────────── */
+const PROJECTS = [
+  {
+    title: 'Aurelia Real State',
+    sub: 'Hotel Landing Page',
+    badge: 'Visit site →',
+    theme: 'desert', bg: '#18120e', accent: '#d8a362',
+    image: 'hotel.png',
+    url: 'https://hotel-landing-drab.vercel.app/',
+    fit: 'top'
+  },
+  {
+    title: 'Arlo Real State',
+    sub: 'Real Estate Landing Page',
+    badge: 'Visit site →',
+    theme: 'hospital', bg: '#1f3330', accent: '#47c29e',
+    image: 'arlo.png',
+    url: 'https://landing-real-state.vercel.app/',
+    fit: 'top'
+  },
+  {
+    title: 'Petnova',
+    sub: 'Petnova Gatos',
+    badge: 'Visit site →',
+    theme: 'nathan', bg: '#1c1b22', accent: '#a78bfa',
+    image: 'petnova.png',
+    url: 'https://petnovagatos.com',
+    fit: 'top'
+  },
+  {
+    title: 'ShowMe & Co',
+    sub: 'Web Agency',
+    badge: 'Visit site →',
+    theme: 'griflan', bg: '#121212', accent: '#e64522',
+    image: 'showmeco.png',
+    url: 'https://showmeco.vercel.app/',
+    fit: 'top'
+  }
+];
+
+/* Aviso en pantalla si las imágenes no cargan */
+const warnEl = document.createElement('div');
+warnEl.style.cssText = 'position:fixed;left:50%;bottom:72px;transform:translateX(-50%);z-index:50;max-width:min(92vw,640px);padding:10px 16px;border-radius:10px;background:rgba(150,30,30,.92);color:#fff;font-size:12px;line-height:1.45;text-align:center;display:none;pointer-events:none';
+document.body.appendChild(warnEl);
+const failedImgs = new Set();
+function imgWarn(kind, name) {
+  if (kind === 'file') {
+    warnEl.textContent = '⚠ Abriste el index.html con doble click: el navegador bloquea las imágenes en WebGL. Ábrelo con Live Server (VS Code) o súbelo a GitHub Pages / Vercel.';
+  } else {
+    failedImgs.add(name);
+    warnEl.textContent = '⚠ No se encontró: ' + [...failedImgs].join(', ') + ' — deben estar junto al index.html, con el nombre exacto (ojo mayúsculas y que no sea .png.png).';
+  }
+  warnEl.style.display = 'block';
+}
+
+function createCardTexture(proj) {
+  const c = document.createElement('canvas');
+  c.width = 2048;
+  c.height = 1320; // Aspect ratio ~ 1.55
+  const ctx = c.getContext('2d');
+
+  ctx.fillStyle = proj.bg;
+  ctx.fillRect(0, 0, c.width, c.height);
+
+  if (proj.image) {
+    // card con imagen: solo el fondo hasta que cargue la captura
+  } else if (proj.theme === 'tlb') {
+    // Recreación idéntica de "(BO®S) TLB/2026 The Lookback"
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, c.width, c.height);
+
+    ctx.fillStyle = '#000000';
+    ctx.font = '900 120px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('(BO®S)', c.width / 2, 180);
+    ctx.fillText('TLB/2026', c.width / 2, 290);
+
+    // Muestras verticales de fotos en cascada
+    const strips = [
+      { x: 500, w: 75, h: 480, c: '#3b82f6' },
+      { x: 620, w: 90, h: 540, c: '#f59e0b' },
+      { x: 750, w: 105, h: 620, c: '#10b981' },
+      { x: 890, w: 125, h: 720, c: '#ef4444' },
+      { x: 1050, w: 115, h: 640, c: '#8b5cf6' },
+      { x: 1200, w: 95, h: 550, c: '#06b6d4' },
+      { x: 1330, w: 80, h: 480, c: '#374151' }
+    ];
+    strips.forEach((s) => {
+      ctx.fillStyle = s.c;
+      ctx.fillRect(s.x, 420, s.w, s.h);
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.fillRect(s.x + s.w - 10, 420, 10, s.h);
+    });
+
+  } else if (proj.theme === 'desert') {
+    // Casa Di Solare: Arcos cálidos, agua y esfera dorada
+    const grad = ctx.createLinearGradient(0, 0, 0, c.height);
+    grad.addColorStop(0, '#362319');
+    grad.addColorStop(0.5, '#734c2c');
+    grad.addColorStop(1, '#1b120c');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, c.width, c.height);
+
+    // Arcos arquitectónicos
+    ctx.fillStyle = '#9e6e44';
+    ctx.beginPath();
+    ctx.arc(c.width * 0.38, 700, 280, Math.PI, 0, false);
+    ctx.lineTo(c.width * 0.38 + 280, 1050);
+    ctx.lineTo(c.width * 0.38 - 280, 1050);
+    ctx.fill();
+
+    // Esfera dorada
+    const radG = ctx.createRadialGradient(c.width * 0.38 - 35, 740, 10, c.width * 0.38, 770, 130);
+    radG.addColorStop(0, '#ffec9e');
+    radG.addColorStop(0.5, '#d4983b');
+    radG.addColorStop(1, '#784813');
+    ctx.fillStyle = radG;
+    ctx.beginPath();
+    ctx.arc(c.width * 0.38, 770, 130, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Texto serif grande elegante de fondo "Solare"
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.font = 'italic 400 280px "Times New Roman", Georgia, serif';
+    ctx.fillText('Solare', 120, 580);
+
+  } else if (proj.theme === 'griflan') {
+    // Client Confessions (Griflan)
+    ctx.fillStyle = '#111111';
+    ctx.fillRect(0, 0, c.width, c.height);
+
+    ctx.fillStyle = '#f5f5f0';
+    ctx.font = 'italic 400 130px "Times New Roman", Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Client', c.width / 2, 220);
+    ctx.fillText('Confessions', c.width / 2, 360);
+
+    // Tarjetas flotantes rojas y cremas de testimonios
+    const cards = [
+      { x: 180, y: 520, w: 420, h: 320, c: '#e53e3e' },
+      { x: 640, y: 480, w: 520, h: 380, c: '#f7f6f0' },
+      { x: 1200, y: 520, w: 440, h: 320, c: '#e53e3e' }
+    ];
+    cards.forEach(k => {
+      ctx.fillStyle = k.c;
+      ctx.beginPath();
+      ctx.roundRect(k.x, k.y, k.w, k.h, 16);
+      ctx.fill();
+    });
+
+  } else if (proj.theme === 'nathan') {
+    // Nathan Riley: Mosaico 3D de portafolio
+    ctx.fillStyle = '#14141a';
+    ctx.fillRect(0, 0, c.width, c.height);
+
+    const tiles = [
+      { x: 120, y: 160, w: 340, h: 380, c: '#38bdf8' },
+      { x: 500, y: 160, w: 420, h: 520, c: '#c084fc' },
+      { x: 960, y: 160, w: 360, h: 340, c: '#34d399' },
+      { x: 1360, y: 160, w: 340, h: 420, c: '#fb923c' },
+      { x: 120, y: 580, w: 340, h: 420, c: '#f43f5e' },
+      { x: 960, y: 540, w: 360, h: 460, c: '#fbbf24' }
+    ];
+    tiles.forEach(t => {
+      ctx.fillStyle = t.c;
+      ctx.beginPath();
+      ctx.roundRect(t.x, t.y, t.w, t.h, 14);
+      ctx.fill();
+    });
+
+  } else {
+    // Hospital / Book of Happiness y otros
+    const grad = ctx.createLinearGradient(0, 0, c.width, c.height);
+    grad.addColorStop(0, proj.bg);
+    grad.addColorStop(1, '#050505');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, c.width, c.height);
+
+    ctx.fillStyle = '#d9534f';
+    ctx.fillRect(c.width * 0.42, 280, 680, 220);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 36px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('COMPLETE ALL TIMESHEETS', c.width * 0.42 + 60, 370);
+    ctx.fillText('BEFORE GRID SHUTS DOWN', c.width * 0.42 + 60, 430);
+  }
+
+  const drawUI = () => {
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  // ── Elementos de UI sobre la tarjeta (tipografía y botones idénticos a Jesper) ──
+  // 1. Tag superior izquierdo
+  if (proj.tag) {
+    ctx.fillStyle = proj.theme === 'tlb' ? '#444' : 'rgba(255,255,255,0.7)';
+    ctx.font = '600 28px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(proj.tag, 90, 100);
+  }
+
+  // 2. Badge superior derecho
+  if (proj.badge) {
+    ctx.font = '600 26px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    const tw = ctx.measureText(proj.badge).width;
+    const bx = c.width - tw - 130;
+    const by = 60;
+    ctx.fillStyle = proj.theme === 'tlb' ? '#000' : (proj.theme === 'griflan' ? '#e64522' : 'rgba(255,255,255,0.88)');
+    ctx.beginPath();
+    ctx.roundRect(bx, by, tw + 46, 52, 26);
+    ctx.fill();
+
+    ctx.fillStyle = (proj.theme === 'tlb' || proj.theme === 'griflan') ? '#fff' : '#000';
+    ctx.fillText(proj.badge, bx + 23, by + 36);
+  }
+
+  // 3. Título del Proyecto (inferior izquierdo)
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '600 84px system-ui, -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(proj.title, 90, c.height - 100);
+
+  // Subtítulo encima del título
+  if (proj.sub) {
+    ctx.fillStyle = 'rgba(255,255,255,0.72)';
+    ctx.font = '500 32px system-ui, -apple-system, sans-serif';
+    ctx.fillText(proj.sub, 92, c.height - 100 - 84 - 8);
+  }
+
+  // 4. Botón circular inferior derecho con flecha "→"
+  const cx = c.width - 130;
+  const cy = c.height - 130;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 48, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '400 44px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('→', cx, cy + 15);
+
+  };
+  drawUI();
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = true;
+  tex.colorSpace = THREE.LinearSRGBColorSpace;
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+  // Si la card tiene imagen, se pinta (cover) y se vuelve a dibujar el texto encima
+  if (proj.image && location.protocol === 'file:') {
+    imgWarn('file'); // en file:// subir la imagen a WebGL falla y congela el carrusel
+  } else if (proj.image) {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.max(c.width / img.width, c.height / img.height);
+      const w = img.width * k, h = img.height * k;
+      const y = proj.fit === 'top' ? 0 : (c.height - h) / 2; // fit: 'top' alinea arriba (útil para capturas de páginas)
+      ctx.drawImage(img, (c.width - w) / 2, y, w, h);
+      drawUI();
+      tex.needsUpdate = true;
+    };
+    img.onerror = () => { console.warn('No se pudo cargar la imagen: ' + proj.image); imgWarn('missing', proj.image); };
+    img.decoding = 'async';
+    img.src = proj.image;
+  }
+  return tex;
+}
+
+/* ── 7. CREACIÓN DE LAS MALLAS ── */
+const cardGeo = new THREE.PlaneGeometry(1, 1, 32, 24);
+
+const cardMeshes = [];
+const cardData = [];
+
+PROJECTS.forEach((proj, i) => {
+  const tex = createCardTexture(proj);
+
+  const mat = new THREE.ShaderMaterial({
+    vertexShader: CARD_VERTEX_SHADER,
+    fragmentShader: CARD_FRAGMENT_SHADER,
+    uniforms: {
+      u_texture:   { value: tex },
+      u_size:      { value: new THREE.Vector2(2048, 1320) },
+      u_res:       { value: new THREE.Vector2(1, 1) },
+      u_alpha:     { value: 1.0 },
+      u_shade:     { value: 1.0 },
+      u_shadeS:    { value: 1.0 },
+      u_corner:    { value: 0.045 },
+      u_scrim:     { value: 1.0 },
+      u_hover:     { value: 0.0 },
+      u_dent:      { value: CFG.dent },
+
+      u_sheetW:    { value: 0.0 },
+      u_sheetD:    { value: 0.0 },
+      u_sheetT:    { value: 1.15 },
+      u_sheetC:    { value: 1.0 },
+      u_sheetP:    { value: 1.0 },
+      u_sheetV:    { value: 0.0 },
+
+      u_leanA:     { value: 0.0 },
+      u_leanW:     { value: 0.0 },
+
+      u_cfgBank:   { value: CFG.bank },
+      u_cfgDiag:   { value: CFG.diag },
+      u_cfgVtwist: { value: CFG.vtwist }
+    },
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
+
+  const mesh = new THREE.Mesh(cardGeo, mat);
+  mesh.renderOrder = 0;
+  scene.add(mesh);
+
+  cardMeshes.push(mesh);
+  cardData.push({
+    index: i,
+    proj,
+    hoverVal: 0,
+    targetHover: 0
+  });
+});
+
+/* ── 8. SCROLL Y FÍSICA SUAVE CALIBRADA ── */
+let scrollOffset = 0;
+let scrollTarget = 0;
+let scrollVelocity = 0;
+let smoothedVelocity = 0;
+let isPointerDown = false;
+let lastPointerX = 0;
+
+// Wheel con inercia controlada
+window.addEventListener('wheel', (e) => {
+  scrollTarget += e.deltaY * 0.75;
+}, { passive: true });
+
+// Drag suave
+window.addEventListener('pointerdown', (e) => {
+  if (e.target.closest('#controlsPanel') || e.target.closest('#toggleControls')) return;
+  isPointerDown = true;
+  lastPointerX = e.clientX;
+});
+
+window.addEventListener('pointermove', (e) => {
+  if (!isPointerDown) return;
+  const delta = lastPointerX - e.clientX;
+  lastPointerX = e.clientX;
+  scrollTarget += delta * 1.4;
+});
+
+window.addEventListener('pointerup', () => { isPointerDown = false; });
+window.addEventListener('pointercancel', () => { isPointerDown = false; });
+
+// Raycaster para el hover cóncavo (Dent)
+const raycaster = new THREE.Raycaster();
+const mouseNdc = new THREE.Vector2(-999, -999);
+
+window.addEventListener('pointermove', (e) => {
+  mouseNdc.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouseNdc.y = -(e.clientY / window.innerHeight) * 2 + 1;
+});
+
+// Click en una card → abre su url (ignora arrastres)
+let downX = 0, downY = 0;
+window.addEventListener('pointerdown', (e) => { downX = e.clientX; downY = e.clientY; });
+window.addEventListener('pointerup', (e) => {
+  if (e.target.closest('#controlsPanel') || e.target.closest('#toggleControls') || e.target.closest('.clickable')) return;
+  if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) return; // fue drag
+  const ndc = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const hit = raycaster.intersectObjects(cardMeshes)[0];
+  if (!hit) return;
+  const url = PROJECTS[cardMeshes.indexOf(hit.object)].url;
+  if (url) window.open(url, '_blank', 'noopener'); // para abrir en la misma pestaña: location.href = url;
+});
+
+/* ── 9. DIMENSIONES Y TRACK ── */
+function updateDimensions() {
+  const ww = window.innerWidth;
+  const wh = window.innerHeight;
+
+  renderer.setSize(ww, wh);
+  camera.aspect = ww / wh;
+  camera.updateProjectionMatrix();
+
+  const fovRad = camera.fov * Math.PI / 180;
+  const H = Math.tan(fovRad / 2) * camera.position.z; // Frustum half-height
+  const W = H * camera.aspect;                        // Frustum half-width
+
+  // Altura de la card: 55% de la pantalla (proporción exacta de la referencia)
+  const cardScreenH = wh * CFG.cardHFrac;
+  const cardScreenW = cardScreenH * CFG.cardAspect;
+
+  const cardScaleY = (2.0 * H) * (cardScreenH / wh);
+  const cardScaleX = (2.0 * W) * (cardScreenW / ww);
+
+  // Espaciado ajustado: ancho + 5% de separación
+  const spacing = cardScaleX * 1.05;
+  const totalLength = cardMeshes.length * spacing;
+
+  return { ww, wh, H, W, cardScaleX, cardScaleY, spacing, totalLength, cardScreenH };
+}
+
+let dims = updateDimensions();
+
+window.addEventListener('resize', () => {
+  dims = updateDimensions();
+  const rw = Math.max(1, Math.round(window.innerWidth * 0.1));
+  const rh = Math.max(1, Math.round(window.innerHeight * 0.1));
+  reflectTarget.setSize(rw, rh);
+});
+
+let lastTime = performance.now();
+const hudCount = document.getElementById('hudCount');
+let lastIdx = -1;
+
+/* ── 10. BUCLE PRINCIPAL DE RENDER ── */
+function tick(now) {
+  requestAnimationFrame(tick);
+
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  lastTime = now;
+
+  // Suavizado del scroll con amortiguación
+  const prevScroll = scrollOffset;
+  scrollOffset += (scrollTarget - scrollOffset) * (1 - Math.exp(-9.0 * dt));
+  scrollVelocity = (scrollOffset - prevScroll) / Math.max(dt, 0.001);
+
+  // Velocidad normalizada suave (evita picos que rompan el shader)
+  const speedNorm = Math.tanh(scrollVelocity / 800.0);
+  smoothedVelocity += (speedNorm - smoothedVelocity) * (1 - Math.exp(-5.0 * dt));
+  const velMag = Math.min(0.20, Math.abs(smoothedVelocity)); // Tope de seguridad estético
+
+  // Parámetros de la onda
+  const isSmall = window.innerWidth < 650;
+  const sheetD = dims.W * CFG.depth * (1.0 + 0.3 * velMag);
+  const leanA = dims.W * CFG.door;
+
+  // Detección de Hover
+  raycaster.setFromCamera(mouseNdc, camera);
+  const intersects = raycaster.intersectObjects(cardMeshes);
+  const hoveredMesh = intersects.length ? intersects[0].object : null;
+  canvas.style.cursor = (!isPointerDown && hoveredMesh && PROJECTS[cardMeshes.indexOf(hoveredMesh)].url) ? 'pointer' : '';
+
+  // Altura vertical de la card: ligeramente alzada del centro para ver el suelo
+  const cardCenterY = dims.H * 0.06;
+
+  // Conversión de píxeles de scroll a unidades de mundo
+  const worldScroll = scrollOffset * ((2.0 * dims.W) / dims.ww);
+  const halfLen = dims.totalLength / 2;
+
+  // Contador: qué card está al centro
+  const nCards = cardMeshes.length;
+  const curIdx = ((Math.round(worldScroll / dims.spacing) % nCards) + nCards) % nCards;
+  if (curIdx !== lastIdx && hudCount) {
+    lastIdx = curIdx;
+    hudCount.innerHTML = '<b>' + String(curIdx + 1).padStart(2, '0') + '</b> / ' + String(nCards).padStart(2, '0') + ' — ' + PROJECTS[curIdx].title;
+  }
+
+  cardMeshes.forEach((mesh, i) => {
+    const data = cardData[i];
+
+    // Posición a lo largo del carrusel continuo
+    const baseWorldX = (i * dims.spacing) - worldScroll;
+    const wx = ((baseWorldX + halfLen) % dims.totalLength + dims.totalLength) % dims.totalLength - halfLen;
+
+    mesh.position.set(wx, cardCenterY, 0);
+    mesh.scale.set(dims.cardScaleX, dims.cardScaleY, 1);
+
+    // Hover suave (hundimiento cóncavo del centro)
+    const isHovered = (mesh === hoveredMesh);
+    data.targetHover = isHovered ? 1.0 : 0.0;
+    data.hoverVal += (data.targetHover - data.hoverVal) * (1 - Math.exp(-8.0 * dt));
+
+    const u = mesh.material.uniforms;
+    u.u_res.value.set(dims.cardScaleX, dims.cardScaleY);
+    u.u_corner.value = 24.0 / dims.cardScreenH;
+    u.u_hover.value = data.hoverVal;
+    u.u_dent.value = CFG.dent;
+
+    u.u_sheetW.value = dims.W;
+    u.u_sheetD.value = sheetD;
+    u.u_sheetT.value = CFG.span;
+    u.u_sheetC.value = isSmall ? 0.0 : 1.0;
+    u.u_sheetP.value = 1.0;
+    u.u_sheetV.value = velMag;
+
+    u.u_leanA.value = leanA;
+    u.u_leanW.value = dims.W;
+
+    u.u_cfgBank.value = CFG.bank;
+    u.u_cfgDiag.value = CFG.diag;
+    u.u_cfgVtwist.value = CFG.vtwist;
+  });
+
+  // ── Sincronizar Suelo y Reflejo Planar ──
+  const cardBottomY = cardCenterY - dims.cardScaleY * 0.5 - dims.H * CFG.drop;
+  const floorRunDepth = dims.H * CFG.run;
+  const camZ = camera.position.z;
+  const floorNearZ = Math.min(camZ * (1 - Math.abs(cardBottomY) / dims.H) + dims.H * CFG.lip, camZ * 0.8);
+  const floorTotalLength = floorNearZ + floorRunDepth;
+  const floorWidth = dims.W * 2.0 * CFG.wide;
+
+  floorMesh.scale.set(floorWidth, 1, floorTotalLength);
+  floorMesh.position.set(0, cardBottomY, (floorNearZ - floorRunDepth) / 2.0);
+
+  const cellSize = dims.H * CFG.cell;
+  const fu = floorMat.uniforms;
+  fu.u_leanK.value = 1.0;
+  fu.u_run.value = floorRunDepth;
+  fu.u_leanA.value = leanA;
+  fu.u_leanW.value = dims.W;
+  fu.u_gridF.value.set(floorWidth / cellSize, floorRunDepth / cellSize);
+  fu.u_grid.value = CFG.grid;
+  fu.u_reflA.value = CFG.refl;
+
+  // Reflejo en tiempo real de baja resolución
+  if (CFG.refl > 0.001) {
+    const floorY = cardBottomY - dims.H * 0.07;
+    reflectCamera.copy(camera);
+    reflectCamera.position.set(camera.position.x, 2 * floorY - camera.position.y, camera.position.z);
+    reflectCamera.updateMatrixWorld();
+
+    fu.u_reflVP.value
+      .copy(reflectCamera.matrixWorld)
+      .invert()
+      .premultiply(reflectCamera.projectionMatrix);
+    fu.u_reflSpread.value = CFG.reflSpread;
+    fu.u_reflLX.value = -dims.W * CFG.reflLight;
+
+    floorMesh.visible = false;
+    renderer.setRenderTarget(reflectTarget);
+    renderer.clear();
+    renderer.render(scene, reflectCamera);
+    renderer.setRenderTarget(null);
+    floorMesh.visible = true;
+  }
+
+  // Render final de la escena
+  renderer.clear();
+  renderer.render(scene, camera);
+}
+
+requestAnimationFrame(tick);
+
+/* ── 11. PANEL DE CONTROL ── */
+const toggleBtn = document.getElementById('toggleControls');
+const panel = document.getElementById('controlsPanel');
+if (toggleBtn && panel) toggleBtn.addEventListener('click', () => {
+  panel.classList.toggle('hidden');
+});
+
+function bindSlider(id, key, formatFn) {
+  const input = document.getElementById(id);
+  const label = document.getElementById('v_' + id);
+  if (!input || !label) return;
+  input.addEventListener('input', () => {
+    CFG[key] = parseFloat(input.value);
+    label.textContent = formatFn ? formatFn(CFG[key]) : CFG[key].toFixed(2);
+    if (key === 'cardScale') {
+      dims = updateDimensions();
+    }
+  });
+}
+
+bindSlider('depth', 'depth');
+bindSlider('bank', 'bank');
+bindSlider('door', 'door');
+bindSlider('diag', 'diag', v => v.toFixed(3));
+bindSlider('cardScale', 'cardHFrac');
+bindSlider('dent', 'dent');
+bindSlider('grid', 'grid');
+bindSlider('refl', 'refl');
+</script>
+</body>
+</html>
