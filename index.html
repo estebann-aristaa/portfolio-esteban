@@ -133,7 +133,7 @@
     .i-load { padding: 0 20px 28px; }
   }
 
-  .hud-top, .hud-bottom { opacity: 0; transition: opacity 1.2s ease .4s; }
+  .hud-top, .hud-bottom { opacity: 0; transition: opacity 1.2s ease 1.8s; }
   body.entered .hud-top, body.entered .hud-bottom { opacity: 1; }
 
   canvas#webgl { transform: scale(1.08); transition: transform 2s cubic-bezier(.16,1,.3,1); }
@@ -315,7 +315,10 @@
   }
   window.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); enter(); } });
   const enterBtn = document.getElementById('enterBtn');
-  if (window.matchMedia('(hover: none)').matches) enterBtn.innerHTML = '<span>Tap to enter</span>';
+  if (window.matchMedia('(hover: none)').matches) {
+    enterBtn.innerHTML = '<span>Tap anywhere to start</span>';
+    intro.addEventListener('click', enter);
+  }
   enterBtn.addEventListener('click', enter);
 })();
 </script>
@@ -470,6 +473,7 @@ uniform float u_sheetP;
 uniform float u_leanA;
 uniform float u_leanW;
 uniform float u_cfgBank;
+uniform float u_white;
 
 varying vec2 vUv;
 varying vec3 vFlat;
@@ -615,6 +619,8 @@ void main() {
     float g = 1.0 - smoothstep(0.0, 0.45, vUv.y);
     tex.rgb = mix(tex.rgb, vec3(0.0), u_scrim * 0.60 * g * g);
   }
+
+  tex.rgb = mix(tex.rgb, vec3(1.0), u_white);
 
   float alpha = u_alpha;
   if (u_corner > 0.0001) {
@@ -869,7 +875,7 @@ PROJECTS.forEach((proj, i) => {
       u_scrim: { value: 1.0 }, u_hover: { value: 0.0 }, u_dent: { value: CFG.dent },
       u_sheetW: { value: 0.0 }, u_sheetD: { value: 0.0 }, u_sheetT: { value: 1.15 }, u_sheetC: { value: 1.0 },
       u_sheetP: { value: 1.0 }, u_sheetV: { value: 0.0 }, u_leanA: { value: 0.0 }, u_leanW: { value: 0.0 },
-      u_cfgBank: { value: CFG.bank }, u_cfgDiag: { value: CFG.diag }, u_cfgVtwist: { value: CFG.vtwist }
+      u_white: { value: 0.0 }, u_cfgBank: { value: CFG.bank }, u_cfgDiag: { value: CFG.diag }, u_cfgVtwist: { value: CFG.vtwist }
     },
     transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide
   });
@@ -881,6 +887,7 @@ PROJECTS.forEach((proj, i) => {
 
 /* ── SCROLL + SNAP ── */
 const entered = () => document.body.classList.contains('entered');
+let introDone = false;
 let scrollOffset = 0, scrollTarget = 0, scrollVelocity = 0, smoothedVelocity = 0;
 let isPointerDown = false, lastPointerX = 0, lastPointerY = 0;
 let lastInput = 0, snapped = true, moved = 0;
@@ -888,12 +895,12 @@ const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 function push(d) { scrollTarget += d; moved += d; lastInput = performance.now(); snapped = false; }
 
 window.addEventListener('wheel', (e) => {
-  if (!entered()) return;
+  if (!introDone) return;
   push((e.deltaY + (dims.mobile ? 0 : e.deltaX)) * 0.9);
 }, { passive: true });
 
 window.addEventListener('pointerdown', (e) => {
-  if (!entered()) return;
+  if (!introDone) return;
   isPointerDown = true; lastPointerX = e.clientX; lastPointerY = e.clientY;
 });
 window.addEventListener('pointermove', (e) => {
@@ -921,7 +928,7 @@ window.addEventListener('pointermove', (e) => {
 let downX = 0, downY = 0;
 window.addEventListener('pointerdown', (e) => { downX = e.clientX; downY = e.clientY; });
 window.addEventListener('pointerup', (e) => {
-  if (!entered() || e.target.closest('.clickable')) return;
+  if (!introDone || e.target.closest('.clickable')) return;
   if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) return;
   const ndc = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
@@ -972,6 +979,8 @@ function setHud(i) {
 }
 const glowCur = new THREE.Color(0x000000), glowTgt = new THREE.Color(PROJECTS[0].accent);
 const easeOut = t => 1 - Math.pow(1 - t, 3);
+const easeInOut = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const clamp01 = t => Math.max(0, Math.min(1, t));
 
 let lastTime = performance.now(), lastIdx = -1, entryT0 = -1;
@@ -985,6 +994,7 @@ function tick(now) {
   if (ent && entryT0 < 0) entryT0 = now;
   const et = ent ? (now - entryT0) / 1000 : 0;
   const mobile = dims.mobile;
+  if (et > 2.5) introDone = true;
 
   // Snap a la card más cercana al soltar
   if (!snapped && !isPointerDown && now - lastInput > 140) {
@@ -1006,7 +1016,7 @@ function tick(now) {
   const leanA = mobile ? 0.0 : dims.W * CFG.door;
 
   raycaster.setFromCamera(mouseNdc, camera);
-  const hit = (!mobile && ent) ? raycaster.intersectObjects(cardMeshes)[0] : null;
+  const hit = (!mobile && introDone) ? raycaster.intersectObjects(cardMeshes)[0] : null;
   const hoveredMesh = hit ? hit.object : null;
   const hoveredUrl = hoveredMesh ? PROJECTS[cardMeshes.indexOf(hoveredMesh)].url : '';
   canvas.style.cursor = fine ? 'none' : '';
@@ -1028,41 +1038,68 @@ function tick(now) {
   const curIdx = ((Math.round(worldScroll / dims.spacing) % nCards) + nCards) % nCards;
   if (curIdx !== lastIdx) { lastIdx = curIdx; setHud(curIdx); glowTgt.set(PROJECTS[curIdx].accent); }
 
+  // 3 barras blancas centradas → se abren en las 3 cards visibles
+  const wpp = (2.0 * dims.H) / dims.wh;
+  const barW = (mobile ? 56 : 64) * wpp, barH = 4 * wpp, barGap = 9 * wpp;
+  const nC = cardMeshes.length;
+
   cardMeshes.forEach((mesh, i) => {
     const data = cardData[i];
-    let pos;
-    if (mobile) { pos = wrap(worldScroll - i * dims.spacing); mesh.position.set(0, pos, 0); }
-    else { pos = wrap(i * dims.spacing - worldScroll); mesh.position.set(pos, cardCenterY, 0); }
+    const pos = mobile ? wrap(worldScroll - i * dims.spacing) : wrap(i * dims.spacing - worldScroll);
 
+    const slot = (i === 0) ? 1 : (i === 1) ? 2 : (i === nC - 1) ? 0 : -1; // izq/arriba = 0, centro = 1, der/abajo = 2
     const d = Math.abs(pos) / dims.spacing;
-    const p = ent ? easeOut(clamp01((et - 0.2 - d * 0.12) / 1.2)) : 0;     // entrada escalonada
     const focus = Math.exp(-d * d * (mobile ? 0.6 : 1.4));
     const sc = mobile ? 1 - 0.05 * Math.min(1, Math.abs(pos) / dims.H) : 1 + 0.06 * focus;
+    const p = slot >= 0 ? 1 : (ent ? easeOut(clamp01((et - 1.7 - d * 0.1) / 1.1)) : 0);
 
-    let z = -(1 - p) * dims.H * 1.8;
+    let fz = -(1 - p) * dims.H * 1.8, rotX = 0;
     if (mobile) {
       const t = Math.min(1.4, Math.abs(pos) / dims.H);
-      z -= t * t * dims.H * 0.3;                                              // curva de rueda
-      mesh.rotation.x = -Math.max(-1.2, Math.min(1.2, pos / dims.H)) * 0.5;
-    } else mesh.rotation.x = 0;
-    mesh.position.z = z;
-    mesh.scale.set(dims.cardScaleX * sc, dims.cardScaleY * sc, 1);
+      fz -= t * t * dims.H * 0.3;
+      rotX = -Math.max(-1.2, Math.min(1.2, pos / dims.H)) * 0.5;
+    }
+    const fx = mobile ? 0 : pos;
+    const fy = mobile ? pos : cardCenterY;
+    let sx = dims.cardScaleX * sc, sy = dims.cardScaleY * sc;
+    let alpha = p * (mobile ? 0.55 + 0.45 * focus : 0.45 + 0.55 * focus);
+    let white = 0, sheetP = 1, corner = 24.0 / dims.cardScreenH;
+
+    if (slot >= 0 && !introDone) {
+      const m = easeInOut(clamp01((et - 1.25 - slot * 0.07) / 1.0));
+      const draw = easeOut(clamp01((et - 0.45 - slot * 0.08) / 0.5));
+      const L = (a, b) => a + (b - a) * m;
+      const bx = (slot - 1) * (barW + barGap);
+      mesh.position.set(L(bx, fx), L(0, fy), L(0, fz));
+      mesh.rotation.x = rotX * m;
+      sx = L(Math.max(1e-4, barW * draw), sx);
+      sy = L(barH, sy);
+      alpha = L(1, alpha);
+      white = 1 - smooth(0.1, 0.7, m);
+      sheetP = m;
+      corner = L(0.5, corner);
+    } else {
+      mesh.position.set(fx, fy, fz);
+      mesh.rotation.x = rotX;
+    }
+    mesh.scale.set(sx, sy, 1);
 
     data.targetHover = (mesh === hoveredMesh) ? 1.0 : 0.0;
     data.hoverVal += (data.targetHover - data.hoverVal) * (1 - Math.exp(-8.0 * dt));
 
     const u = mesh.material.uniforms;
-    u.u_res.value.set(dims.cardScaleX * sc, dims.cardScaleY * sc);
-    u.u_corner.value = 24.0 / dims.cardScreenH;
+    u.u_res.value.set(sx, sy);
+    u.u_corner.value = corner;
     u.u_hover.value = data.hoverVal;
     u.u_dent.value = CFG.dent;
-    u.u_alpha.value = p * (mobile ? 0.55 + 0.45 * focus : 0.45 + 0.55 * focus);
+    u.u_alpha.value = alpha;
+    u.u_white.value = white;
 
     u.u_sheetW.value = mobile ? 0.0 : dims.W;
     u.u_sheetD.value = sheetD;
     u.u_sheetT.value = CFG.span;
     u.u_sheetC.value = mobile ? 0.0 : 1.0;
-    u.u_sheetP.value = 1.0;
+    u.u_sheetP.value = sheetP;
     u.u_sheetV.value = mobile ? 0.0 : velMag;
     u.u_leanA.value = leanA;
     u.u_leanW.value = mobile ? 0.0 : dims.W;
@@ -1074,7 +1111,7 @@ function tick(now) {
   floorMesh.visible = false;
 
   if (!mobile) {
-    const fe = easeOut(clamp01(et / 1.4));
+    const fe = easeOut(clamp01((et - 1.6) / 1.2));
     const cardBottomY = cardCenterY - dims.cardScaleY * 0.5 - dims.H * CFG.drop;
     const floorRunDepth = dims.H * CFG.run;
     const camZ = camera.position.z;
