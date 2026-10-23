@@ -54,61 +54,83 @@
 
   /* ══════════ INTRO ══════════ */
   #intro {
-    position: fixed; inset: 0; z-index: 1000; overflow: hidden;
-    background: #0b0b0a;
-    transition: opacity 1s ease, visibility 1s;
+    position: fixed; inset: 0; z-index: 1000; overflow: hidden; background: #0b0b0a;
+    transition: opacity 1s ease, transform 1.2s cubic-bezier(.7,0,.2,1), filter 1s ease, visibility 1s;
   }
-  #intro.out { opacity: 0; visibility: hidden; pointer-events: none; }
-  .i-grad { color: #ece9e2; }
+  #intro.out { opacity: 0; visibility: hidden; pointer-events: none; transform: scale(1.12); filter: blur(10px); }
 
-  .i-stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-bottom: 10vh; }
+  .i-stage, .i-front { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-bottom: 10vh; }
+  .i-front { z-index: 3; pointer-events: none; }
+  .i-front[hidden] { display: none; }
   .i-title {
     font-family: 'Anton', Impact, 'Arial Narrow', sans-serif; font-weight: 400;
-    font-size: min(21vw, 52vh); line-height: .92; letter-spacing: .01em;
-    white-space: nowrap; text-transform: uppercase; text-align: center;
-    opacity: 0; transform: translateY(24px);
-    animation: iIn 1.2s cubic-bezier(.16,1,.3,1) .15s forwards;
+    font-size: min(21vw, 52vh); line-height: .95; letter-spacing: .01em;
+    white-space: nowrap; text-transform: uppercase; text-align: center; display: inline-block;
   }
-  .i-photo-wrap { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; pointer-events: none; }
+  .i-title .wd { display: inline-block; }
+  .mk { display: inline-block; overflow: hidden; vertical-align: top; padding: .03em 0; }
+  .ch {
+    display: inline-block; transform: translateY(112%);
+    background: linear-gradient(180deg, #f6f3ec 0%, #dfe9e3 55%, #6fe8c3 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+    transition: transform 1.1s cubic-bezier(.16,1,.3,1); transition-delay: calc(var(--i) * 55ms);
+  }
+  #intro.go .ch { transform: none; }
+  .i-front .ch { background: none; -webkit-text-stroke: 1.5px rgba(255,255,255,.8); }
+
+  .i-photo-wrap { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; pointer-events: none; z-index: 2; }
   .i-photo {
     height: min(80vh, 125vw); aspect-ratio: 4 / 5; object-fit: cover; display: block;
     filter: grayscale(1) contrast(1.08);
-    -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 58%, transparent 100%);
-            mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 58%, transparent 100%);
-    opacity: 0; transform: translateY(30px);
-    animation: iIn 1.3s cubic-bezier(.16,1,.3,1) .4s forwards;
+    -webkit-mask-image: radial-gradient(ellipse 46% 50% at 50% 50%, #000 55%, transparent 100%);
+            mask-image: radial-gradient(ellipse 46% 50% at 50% 50%, #000 55%, transparent 100%);
+    opacity: 0; transform: translateY(40px) scale(1.03);
+    transition: opacity 1.2s ease .5s, transform 1.4s cubic-bezier(.16,1,.3,1) .5s;
   }
+  #intro.go .i-photo { opacity: 1; transform: none; }
+  .i-photo.cut {
+    aspect-ratio: auto; width: auto; max-width: 100vw; object-fit: contain;
+    -webkit-mask-image: linear-gradient(#000 82%, transparent 100%); mask-image: linear-gradient(#000 82%, transparent 100%);
+  }
+
   .i-bottom {
-    position: absolute; left: 40px; right: 40px; bottom: calc(36px + env(safe-area-inset-bottom, 0px)); z-index: 3;
+    position: absolute; left: 40px; right: 40px; bottom: calc(36px + env(safe-area-inset-bottom, 0px)); z-index: 4;
     display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 24px;
   }
   .i-left { justify-self: start; }
   .i-right { justify-self: end; text-align: right; }
   .i-hello { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-weight: 400; font-size: clamp(16px, 1.7vw, 26px); color: rgba(255,255,255,.7); margin-bottom: 6px; }
-  .i-me, .i-role {
-    font-family: 'Anton', Impact, 'Arial Narrow', sans-serif; text-transform: uppercase;
-    font-size: clamp(30px, 4.6vw, 76px); line-height: .95; letter-spacing: .01em;
-  }
+  .i-me, .i-role { font-family: 'Anton', Impact, 'Arial Narrow', sans-serif; text-transform: uppercase; font-size: clamp(30px, 4.6vw, 76px); line-height: .95; letter-spacing: .01em; color: #ece9e2; }
   .i-role { font-size: clamp(22px, 3vw, 48px); color: #fff; }
   .i-tags { margin-top: 10px; display: flex; gap: 6px 18px; justify-content: flex-end; flex-wrap: wrap; font-size: clamp(11px, 1.05vw, 15px); font-weight: 500; color: rgba(255,255,255,.85); }
   .i-tags span::before { content: '•'; margin-right: 6px; color: rgba(255,255,255,.4); }
-
-  .i-left, .i-right, .i-enter { opacity: 0; animation: iIn 1s ease 1.1s forwards; }
+  .i-left, .i-right, .i-enter { opacity: 0; transform: translateY(16px); transition: opacity 1s ease 1.3s, transform 1s ease 1.3s, color .3s; }
+  #intro.go .i-left, #intro.go .i-right, #intro.go .i-enter { opacity: 1; transform: none; }
   .i-enter {
     justify-self: center; background: none; border: 0; color: rgba(255,255,255,.75); font: inherit;
     font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer;
-    display: flex; align-items: center; gap: 10px; transition: color .3s; padding-bottom: 6px;
+    display: flex; align-items: center; gap: 10px; padding-bottom: 6px;
   }
   .i-enter:hover { color: #fff; }
   .i-enter .kbd { border: 1px solid rgba(255,255,255,.4); border-radius: 4px; padding: 4px 8px; }
-  @keyframes iIn { to { opacity: 1; transform: none; } }
+
+  .i-load {
+    position: absolute; inset: 0; z-index: 6; background: #0b0b0a; display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 0 40px 36px; transition: transform 1s cubic-bezier(.7,0,.2,1);
+  }
+  #intro.go .i-load { transform: translateY(-100%); }
+  .i-load .n { font-family: 'Anton', Impact, sans-serif; font-size: min(22vw, 34vh); line-height: .8; color: #ece9e2; font-variant-numeric: tabular-nums; }
+  .i-load .t { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; opacity: .5; padding-bottom: 10px; }
+  .i-load .bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; transform-origin: 0 50%; transform: scaleX(0); background: #ece9e2; }
 
   @media (max-width: 760px) {
-    .i-bottom { left: 20px; right: 20px; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 18px; }
+    .i-bottom { left: 20px; right: 20px; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 16px; }
     .i-left, .i-right { justify-self: center; text-align: center; }
     .i-right { display: none; }
-    .i-stage { padding-bottom: 22vh; }
-    .i-photo { height: min(58vh, 125vw); }
+    .i-stage, .i-front { padding-bottom: 30vh; }
+    .i-photo { height: min(64vh, 150vw); }
+    .i-title .wd { display: block; }
+    .i-load { padding: 0 20px 28px; }
   }
 
   .hud-top, .hud-bottom { opacity: 0; transition: opacity 1.2s ease .4s; }
@@ -136,19 +158,51 @@
     .hud-tags { display: none; }
     .hud-bottom { justify-content: center; }
   }
+
+  /* ── Extras: cursor, grano, degradados, HUD ── */
+  #hudCount.swap { animation: hudIn .6s cubic-bezier(.16,1,.3,1); }
+  #hudCount em { font-style: normal; opacity: .5; margin-left: 10px; }
+  @keyframes hudIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @media (max-width: 440px) { #hudCount em { display: none; } }
+
+  .grain { position: fixed; inset: 0; z-index: 1001; pointer-events: none; overflow: hidden; opacity: .07; mix-blend-mode: screen; }
+  .grain::before {
+    content: ''; position: absolute; inset: -100%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation: grain 1s steps(6) infinite;
+  }
+  @keyframes grain { 0% { transform: translate(0,0); } 20% { transform: translate(-5%,3%); } 40% { transform: translate(4%,-6%); } 60% { transform: translate(-3%,5%); } 80% { transform: translate(6%,2%); } 100% { transform: translate(0,0); } }
+
+  .fade-t, .fade-b { position: fixed; left: 0; right: 0; z-index: 5; pointer-events: none; display: none; height: 120px; }
+  .fade-t { top: 0; background: linear-gradient(#000, transparent); }
+  .fade-b { bottom: 0; background: linear-gradient(transparent, #000); }
+  @media (max-width: 760px), (max-aspect-ratio: 9/10) { .fade-t, .fade-b { display: block; } }
+
+  #cursor { position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 1002; pointer-events: none; display: none; transition: opacity .4s; }
+  body:not(.entered) #cursor { opacity: 0; }
+  #cursor i {
+    position: absolute; left: 0; top: 0; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+    background: #fff; mix-blend-mode: difference; display: flex; align-items: center; justify-content: center;
+    transition: width .45s cubic-bezier(.16,1,.3,1), height .45s cubic-bezier(.16,1,.3,1), margin .45s cubic-bezier(.16,1,.3,1), transform .3s;
+  }
+  #cursor b { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #000; font-weight: 600; opacity: 0; transition: opacity .25s; }
+  #cursor.big i { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
+  #cursor.view i { width: 92px; height: 92px; margin: -46px 0 0 -46px; mix-blend-mode: normal; }
+  #cursor.view b { opacity: 1; }
+  #cursor.down i { transform: scale(.85); }
+  @media (hover: hover) and (pointer: fine) { #cursor { display: block; } }
 </style>
 </head>
 <body>
 
 <div id="intro">
-  <div class="i-stage"><h1 class="i-title i-grad">Portfolio</h1></div>
-  <div class="i-photo-wrap">
-    <img class="i-photo" src="fotoesteban.jpg" alt="Esteban A.P" onerror="this.style.display='none'">
-  </div>
+  <div class="i-stage"><h1 class="i-title" aria-label="Portfolio"></h1></div>
+  <div class="i-photo-wrap"><img class="i-photo" id="iPhoto" src="fotoesteban.jpg" alt="Esteban A.P" onerror="this.style.display='none'"></div>
+  <div class="i-front" id="iFront" hidden></div>
   <div class="i-bottom">
     <div class="i-left">
       <p class="i-hello">Hello, I'm</p>
-      <p class="i-me i-grad">Esteban A.P</p>
+      <p class="i-me">Esteban A.P</p>
     </div>
     <button id="enterBtn" class="i-enter"><span class="kbd">Enter</span><span>to continue</span></button>
     <div class="i-right">
@@ -156,6 +210,7 @@
       <div class="i-tags"><span>Websites</span><span>WebGL</span><span>Motion</span></div>
     </div>
   </div>
+  <div class="i-load"><span class="n" id="ldN">00</span><span class="t">Loading portfolio</span><i class="bar" id="ldBar"></i></div>
 </div>
 
 <canvas id="webgl"></canvas>
@@ -170,6 +225,11 @@
   <span id="hudCount"><b>01</b> / 10 — Aurelia Real State</span>
 </div>
 
+<div class="fade-t"></div>
+<div class="fade-b"></div>
+<div id="cursor"><i><b>View</b></i></div>
+<div class="grain"></div>
+
 <script type="importmap">
 { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
 </script>
@@ -177,26 +237,81 @@
 <script>
 (function () {
   const intro = document.getElementById('intro');
-  let done = false;
   const title = intro.querySelector('.i-title');
+  const front = document.getElementById('iFront');
+  const photo = document.getElementById('iPhoto');
+  const mq = window.matchMedia('(max-width: 760px)');
+  let done = false, ready = false;
+
+  function build(t) {
+    t.innerHTML = ''; let i = 0;
+    ['PORT', 'FOLIO'].forEach(w => {
+      const wd = document.createElement('span'); wd.className = 'wd';
+      [...w].forEach(chr => {
+        const mk = document.createElement('span'); mk.className = 'mk';
+        const c = document.createElement('span'); c.className = 'ch'; c.textContent = chr; c.style.setProperty('--i', i++);
+        mk.appendChild(c); wd.appendChild(mk);
+      });
+      t.appendChild(wd);
+    });
+  }
+  build(title);
+  const ft = document.createElement('h2'); ft.className = 'i-title'; ft.setAttribute('aria-hidden', 'true'); build(ft); front.appendChild(ft);
+
   function fitTitle() {
     if (!title.isConnected) return;
     title.style.fontSize = '100px';
-    const w = title.getBoundingClientRect().width || 1;
-    const size = Math.min(100 * (window.innerWidth * 0.9) / w, window.innerHeight * 0.52);
-    title.style.fontSize = size + 'px';
+    const r = title.getBoundingClientRect();
+    const mob = mq.matches;
+    const s = Math.min(100 * (innerWidth * (mob ? .92 : .9)) / (r.width || 1), 100 * (innerHeight * (mob ? .4 : .52)) / (r.height || 1));
+    title.style.fontSize = s + 'px';
+    ft.style.fontSize = s + 'px';
   }
   fitTitle();
   window.addEventListener('resize', fitTitle);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTitle);
+
+  // Si existe esteban.png (recorte sin fondo) se activa el efecto sándwich: título detrás, tú en medio, contorno delante
+  const cut = new Image();
+  cut.onload = () => { photo.src = 'esteban.png'; photo.classList.add('cut'); front.hidden = false; };
+  cut.src = 'esteban.png';
+
   ['wheel', 'pointerdown', 'pointermove', 'pointerup', 'pointercancel'].forEach(t =>
     intro.addEventListener(t, e => e.stopPropagation(), { passive: true }));
 
+  // Parallax
+  let px = 0, py = 0, cx = 0, cy = 0;
+  intro.addEventListener('pointermove', e => { px = (e.clientX / innerWidth - .5) * 2; py = (e.clientY / innerHeight - .5) * 2; }, { passive: true });
+  const stage = intro.querySelector('.i-stage'), pw = intro.querySelector('.i-photo-wrap');
+  (function loop() {
+    if (!intro.isConnected) return;
+    cx += (px - cx) * .06; cy += (py - cy) * .06;
+    stage.style.transform = 'translate(' + (-cx * 18) + 'px,' + (-cy * 10) + 'px)';
+    pw.style.transform = 'translate(' + (cx * 10) + 'px,' + (cy * 6) + 'px)';
+    front.style.transform = 'translate(' + (cx * 26) + 'px,' + (cy * 14) + 'px)';
+    requestAnimationFrame(loop);
+  })();
+
+  // Loader 00 → 100
+  const ldN = document.getElementById('ldN'), ldBar = document.getElementById('ldBar');
+  let t0 = 0; const DUR = 1500;
+  function step(now) {
+    const p = Math.min(1, (now - t0) / DUR), e = 1 - Math.pow(1 - p, 2.2);
+    ldN.textContent = String(Math.round(e * 100)).padStart(2, '0');
+    ldBar.style.transform = 'scaleX(' + e + ')';
+    if (p < 1) requestAnimationFrame(step);
+    else { ready = true; fitTitle(); intro.classList.add('go'); }
+  }
+  const fontsP = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+  Promise.race([fontsP, new Promise(r => setTimeout(r, 1500))]).then(() => {
+    fitTitle();
+    requestAnimationFrame(n => { t0 = n; step(n); });
+  });
+
   function enter() {
-    if (done) return; done = true;
+    if (done || !ready) return; done = true;
     intro.classList.add('out');
     document.body.classList.add('entered');
-    setTimeout(() => intro.remove(), 1100);
+    setTimeout(() => intro.remove(), 1300);
   }
   window.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); enter(); } });
   const enterBtn = document.getElementById('enterBtn');
@@ -223,7 +338,7 @@ camera.lookAt(0, 0, 0);
 
 const CFG = {
   depth: 0.18, span: 1.15, door: -0.10, bank: -0.16, diag: 0.025, vtwist: 0.35, dent: 0.08,
-  cardHFrac: 0.55, cardAspect: 1.55, grid: 0.08, refl: 0.45, reflSpread: 0.35, reflLight: 0.6,
+  cardHFrac: 0.55, cardAspect: 1.55, grid: 0.08, refl: 0.45, reflSpread: 0.12, reflLight: 0.6,
   drop: 0.06, run: 6.0, wide: 4.0, cell: 0.22, lip: 0.2
 };
 
@@ -558,6 +673,10 @@ uniform float u_reflA;
 uniform mat4 u_reflVP;
 uniform float u_reflSpread;
 uniform float u_reflLX;
+uniform float u_reflFull;
+uniform vec3 u_glowC;
+uniform float u_glowA;
+uniform float u_glowW;
 
 varying vec2 vUv;
 varying vec3 vWorld;
@@ -591,11 +710,12 @@ void main() {
     float ok = soft.x * soft.y;
 
     vec3 refl = texture2D(u_refl, ruv).rgb;
-    float fall = exp(-((vFar > 0.0) ? vFar * 6.0 : -vFar * 2.2));
+    float fall = exp(-((vFar > 0.0) ? vFar * 6.0 : -vFar * 1.3));
 
-    col += refl * line * u_reflA * fall * ok * fade;
+    col += refl * (line * u_reflA + u_reflFull) * fall * ok * fade;
   }
 
+  col += u_glowC * u_glowA * exp(-pow(vWorld.x / max(u_glowW, 0.001), 2.0)) * exp(-abs(vFar) * 4.0);
   gl_FragColor = vec4(col, u_alpha * fade);
 }
 `;
@@ -611,7 +731,8 @@ const floorMat = new THREE.ShaderMaterial({
     u_c0: { value: new THREE.Color(0x000000) }, u_c1: { value: new THREE.Color(0x000000) },
     u_alpha: { value: 0.90 }, u_grid: { value: CFG.grid }, u_gridF: { value: new THREE.Vector2(1, 1) },
     u_refl: { value: null }, u_reflA: { value: CFG.refl }, u_reflVP: { value: new THREE.Matrix4() },
-    u_reflSpread: { value: CFG.reflSpread }, u_reflLX: { value: 0.0 }
+    u_reflSpread: { value: CFG.reflSpread }, u_reflLX: { value: 0.0 },
+    u_reflFull: { value: 0.0 }, u_glowC: { value: new THREE.Color(0x000000) }, u_glowA: { value: 0.0 }, u_glowW: { value: 1.0 }
   },
   transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide
 });
@@ -619,8 +740,8 @@ const floorMat = new THREE.ShaderMaterial({
 const floorMesh = new THREE.Mesh(floorGeo, floorMat);
 scene.add(floorMesh);
 
-const reflW = Math.max(1, Math.round(window.innerWidth * 0.1));
-const reflH = Math.max(1, Math.round(window.innerHeight * 0.1));
+const reflW = Math.max(1, Math.round(window.innerWidth * 0.22));
+const reflH = Math.max(1, Math.round(window.innerHeight * 0.22));
 const reflectTarget = new THREE.WebGLRenderTarget(reflW, reflH, {
   minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, colorSpace: THREE.LinearSRGBColorSpace
 });
@@ -758,47 +879,49 @@ PROJECTS.forEach((proj, i) => {
   cardData.push({ index: i, proj, hoverVal: 0, targetHover: 0 });
 });
 
-/* ── SCROLL ── */
+/* ── SCROLL + SNAP ── */
+const entered = () => document.body.classList.contains('entered');
 let scrollOffset = 0, scrollTarget = 0, scrollVelocity = 0, smoothedVelocity = 0;
 let isPointerDown = false, lastPointerX = 0, lastPointerY = 0;
+let lastInput = 0, snapped = true, moved = 0;
+const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+function push(d) { scrollTarget += d; moved += d; lastInput = performance.now(); snapped = false; }
 
 window.addEventListener('wheel', (e) => {
-  // En móvil/vertical el scroll avanza con deltaY; en horizontal también (deltaX como extra)
-  scrollTarget += (e.deltaY + (dims && dims.mobile ? 0 : e.deltaX)) * 0.75;
+  if (!entered()) return;
+  push((e.deltaY + (dims.mobile ? 0 : e.deltaX)) * 0.9);
 }, { passive: true });
 
 window.addEventListener('pointerdown', (e) => {
-  isPointerDown = true;
-  lastPointerX = e.clientX;
-  lastPointerY = e.clientY;
+  if (!entered()) return;
+  isPointerDown = true; lastPointerX = e.clientX; lastPointerY = e.clientY;
 });
-
 window.addEventListener('pointermove', (e) => {
   if (!isPointerDown) return;
-  const dx = lastPointerX - e.clientX;
-  const dy = lastPointerY - e.clientY;
-  lastPointerX = e.clientX;
-  lastPointerY = e.clientY;
+  const dx = lastPointerX - e.clientX, dy = lastPointerY - e.clientY;
+  lastPointerX = e.clientX; lastPointerY = e.clientY;
   let delta;
-  if (dims && dims.mobile) delta = dy;
+  if (dims.mobile) delta = dy;
   else delta = (e.pointerType === 'touch' && Math.abs(dy) > Math.abs(dx)) ? dy : dx;
-  scrollTarget += delta * 1.4;
+  push(delta * 1.4);
 });
-
-window.addEventListener('pointerup', () => { isPointerDown = false; });
-window.addEventListener('pointercancel', () => { isPointerDown = false; });
+const release = () => { isPointerDown = false; lastInput = performance.now(); };
+window.addEventListener('pointerup', release);
+window.addEventListener('pointercancel', release);
 
 const raycaster = new THREE.Raycaster();
 const mouseNdc = new THREE.Vector2(-999, -999);
+let curTX = -100, curTY = -100, curX = -100, curY = -100;
 window.addEventListener('pointermove', (e) => {
   mouseNdc.x = (e.clientX / window.innerWidth) * 2 - 1;
   mouseNdc.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  curTX = e.clientX; curTY = e.clientY;
 });
 
 let downX = 0, downY = 0;
 window.addEventListener('pointerdown', (e) => { downX = e.clientX; downY = e.clientY; });
 window.addEventListener('pointerup', (e) => {
-  if (e.target.closest('.clickable')) return;
+  if (!entered() || e.target.closest('.clickable')) return;
   if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) return;
   const ndc = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
@@ -810,105 +933,130 @@ window.addEventListener('pointerup', (e) => {
 
 /* ── DIMENSIONES (desktop horizontal / móvil vertical) ── */
 function updateDimensions() {
-  const ww = window.innerWidth;
-  const wh = window.innerHeight;
+  const ww = window.innerWidth, wh = window.innerHeight;
   const mobile = ww < 700 || ww / wh < 0.9;
 
   renderer.setSize(ww, wh);
   camera.aspect = ww / wh;
   camera.updateProjectionMatrix();
 
-  const fovRad = camera.fov * Math.PI / 180;
-  const H = Math.tan(fovRad / 2) * camera.position.z;
+  const H = Math.tan(camera.fov * Math.PI / 360) * camera.position.z;
   const W = H * camera.aspect;
 
   let cardScreenW, cardScreenH;
-  if (mobile) {
-    cardScreenW = ww * 0.90;
-    cardScreenH = cardScreenW / CFG.cardAspect;
-  } else {
-    cardScreenH = wh * CFG.cardHFrac;
-    cardScreenW = cardScreenH * CFG.cardAspect;
-  }
+  if (mobile) { cardScreenW = ww * 0.90; cardScreenH = cardScreenW / CFG.cardAspect; }
+  else { cardScreenH = wh * CFG.cardHFrac; cardScreenW = cardScreenH * CFG.cardAspect; }
 
   const cardScaleY = (2.0 * H) * (cardScreenH / wh);
   const cardScaleX = (2.0 * W) * (cardScreenW / ww);
-
   const spacing = mobile ? cardScaleY * 1.06 : cardScaleX * 1.05;
   const totalLength = cardMeshes.length * spacing;
+  const k = mobile ? (2.0 * H) / wh : (2.0 * W) / ww; // unidades de mundo por píxel de scroll
 
-  return { ww, wh, H, W, cardScaleX, cardScaleY, spacing, totalLength, cardScreenH, mobile };
+  return { ww, wh, H, W, cardScaleX, cardScaleY, spacing, totalLength, cardScreenH, mobile, k };
 }
-
 let dims = updateDimensions();
-
 window.addEventListener('resize', () => {
   dims = updateDimensions();
-  reflectTarget.setSize(Math.max(1, Math.round(window.innerWidth * 0.1)), Math.max(1, Math.round(window.innerHeight * 0.1)));
+  reflectTarget.setSize(Math.max(1, Math.round(window.innerWidth * 0.22)), Math.max(1, Math.round(window.innerHeight * 0.22)));
 });
 
-let lastTime = performance.now();
+/* ── HUD, cursor, glow ── */
 const hudCount = document.getElementById('hudCount');
-let lastIdx = -1;
+const cursorEl = document.getElementById('cursor');
+const pad = n => String(n).padStart(2, '0');
+function setHud(i) {
+  const p = PROJECTS[i];
+  hudCount.innerHTML = '<b>' + pad(i + 1) + '</b> / ' + pad(PROJECTS.length) + ' — ' + p.title + (p.sub ? '<em>' + p.sub + '</em>' : '');
+  hudCount.classList.remove('swap'); void hudCount.offsetWidth; hudCount.classList.add('swap');
+}
+const glowCur = new THREE.Color(0x000000), glowTgt = new THREE.Color(PROJECTS[0].accent);
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const clamp01 = t => Math.max(0, Math.min(1, t));
+
+let lastTime = performance.now(), lastIdx = -1, entryT0 = -1;
 
 function tick(now) {
   requestAnimationFrame(tick);
-
   const dt = Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;
 
-  const prevScroll = scrollOffset;
-  scrollOffset += (scrollTarget - scrollOffset) * (1 - Math.exp(-9.0 * dt));
-  scrollVelocity = (scrollOffset - prevScroll) / Math.max(dt, 0.001);
+  const ent = entered();
+  if (ent && entryT0 < 0) entryT0 = now;
+  const et = ent ? (now - entryT0) / 1000 : 0;
+  const mobile = dims.mobile;
 
+  // Snap a la card más cercana al soltar
+  if (!snapped && !isPointerDown && now - lastInput > 140) {
+    const spPx = dims.spacing / dims.k;
+    let base = scrollTarget;
+    if (Math.abs(moved) > 8) base += Math.sign(moved) * spPx * 0.6;
+    scrollTarget = Math.round(base / spPx) * spPx;
+    snapped = true; moved = 0;
+  }
+
+  const prevScroll = scrollOffset;
+  scrollOffset += (scrollTarget - scrollOffset) * (1 - Math.exp(-7.0 * dt));
+  scrollVelocity = (scrollOffset - prevScroll) / Math.max(dt, 0.001);
   const speedNorm = Math.tanh(scrollVelocity / 800.0);
   smoothedVelocity += (speedNorm - smoothedVelocity) * (1 - Math.exp(-5.0 * dt));
   const velMag = Math.min(0.20, Math.abs(smoothedVelocity));
 
-  const mobile = dims.mobile;
   const sheetD = mobile ? 0.0 : dims.W * CFG.depth * (1.0 + 0.3 * velMag);
   const leanA = mobile ? 0.0 : dims.W * CFG.door;
 
   raycaster.setFromCamera(mouseNdc, camera);
-  const intersects = raycaster.intersectObjects(cardMeshes);
-  const hoveredMesh = intersects.length ? intersects[0].object : null;
-  canvas.style.cursor = (!isPointerDown && hoveredMesh && PROJECTS[cardMeshes.indexOf(hoveredMesh)].url) ? 'pointer' : '';
+  const hit = (!mobile && ent) ? raycaster.intersectObjects(cardMeshes)[0] : null;
+  const hoveredMesh = hit ? hit.object : null;
+  const hoveredUrl = hoveredMesh ? PROJECTS[cardMeshes.indexOf(hoveredMesh)].url : '';
+  canvas.style.cursor = fine ? 'none' : '';
+  if (fine) {
+    const f = 1 - Math.exp(-20 * dt);
+    curX += (curTX - curX) * f; curY += (curTY - curY) * f;
+    cursorEl.style.transform = 'translate(' + curX + 'px,' + curY + 'px)';
+    cursorEl.classList.toggle('big', !!hoveredMesh);
+    cursorEl.classList.toggle('view', !!hoveredUrl);
+    cursorEl.classList.toggle('down', isPointerDown);
+  }
 
   const cardCenterY = mobile ? 0 : dims.H * 0.06;
-
-  const worldScroll = scrollOffset * (mobile ? (2.0 * dims.H) / dims.wh : (2.0 * dims.W) / dims.ww);
+  const worldScroll = scrollOffset * dims.k;
   const halfLen = dims.totalLength / 2;
+  const wrap = v => ((v + halfLen) % dims.totalLength + dims.totalLength) % dims.totalLength - halfLen;
 
   const nCards = cardMeshes.length;
   const curIdx = ((Math.round(worldScroll / dims.spacing) % nCards) + nCards) % nCards;
-  if (curIdx !== lastIdx && hudCount) {
-    lastIdx = curIdx;
-    hudCount.innerHTML = '<b>' + String(curIdx + 1).padStart(2, '0') + '</b> / ' + String(nCards).padStart(2, '0') + ' — ' + PROJECTS[curIdx].title;
-  }
+  if (curIdx !== lastIdx) { lastIdx = curIdx; setHud(curIdx); glowTgt.set(PROJECTS[curIdx].accent); }
 
   cardMeshes.forEach((mesh, i) => {
     const data = cardData[i];
+    let pos;
+    if (mobile) { pos = wrap(worldScroll - i * dims.spacing); mesh.position.set(0, pos, 0); }
+    else { pos = wrap(i * dims.spacing - worldScroll); mesh.position.set(pos, cardCenterY, 0); }
 
+    const d = Math.abs(pos) / dims.spacing;
+    const p = ent ? easeOut(clamp01((et - 0.2 - d * 0.12) / 1.2)) : 0;     // entrada escalonada
+    const focus = Math.exp(-d * d * (mobile ? 0.6 : 1.4));
+    const sc = mobile ? 1 - 0.05 * Math.min(1, Math.abs(pos) / dims.H) : 1 + 0.06 * focus;
+
+    let z = -(1 - p) * dims.H * 1.8;
     if (mobile) {
-      // Pila vertical: al deslizar hacia arriba las cards suben
-      const base = worldScroll - i * dims.spacing;
-      const wy = ((base + halfLen) % dims.totalLength + dims.totalLength) % dims.totalLength - halfLen;
-      mesh.position.set(0, wy, 0);
-    } else {
-      const baseWorldX = (i * dims.spacing) - worldScroll;
-      const wx = ((baseWorldX + halfLen) % dims.totalLength + dims.totalLength) % dims.totalLength - halfLen;
-      mesh.position.set(wx, cardCenterY, 0);
-    }
-    mesh.scale.set(dims.cardScaleX, dims.cardScaleY, 1);
+      const t = Math.min(1.4, Math.abs(pos) / dims.H);
+      z -= t * t * dims.H * 0.3;                                              // curva de rueda
+      mesh.rotation.x = -Math.max(-1.2, Math.min(1.2, pos / dims.H)) * 0.5;
+    } else mesh.rotation.x = 0;
+    mesh.position.z = z;
+    mesh.scale.set(dims.cardScaleX * sc, dims.cardScaleY * sc, 1);
 
-    data.targetHover = (mesh === hoveredMesh && !mobile) ? 1.0 : 0.0;
+    data.targetHover = (mesh === hoveredMesh) ? 1.0 : 0.0;
     data.hoverVal += (data.targetHover - data.hoverVal) * (1 - Math.exp(-8.0 * dt));
 
     const u = mesh.material.uniforms;
-    u.u_res.value.set(dims.cardScaleX, dims.cardScaleY);
+    u.u_res.value.set(dims.cardScaleX * sc, dims.cardScaleY * sc);
     u.u_corner.value = 24.0 / dims.cardScreenH;
     u.u_hover.value = data.hoverVal;
     u.u_dent.value = CFG.dent;
+    u.u_alpha.value = p * (mobile ? 0.55 + 0.45 * focus : 0.45 + 0.55 * focus);
 
     u.u_sheetW.value = mobile ? 0.0 : dims.W;
     u.u_sheetD.value = sheetD;
@@ -916,10 +1064,8 @@ function tick(now) {
     u.u_sheetC.value = mobile ? 0.0 : 1.0;
     u.u_sheetP.value = 1.0;
     u.u_sheetV.value = mobile ? 0.0 : velMag;
-
     u.u_leanA.value = leanA;
     u.u_leanW.value = mobile ? 0.0 : dims.W;
-
     u.u_cfgBank.value = mobile ? 0.0 : CFG.bank;
     u.u_cfgDiag.value = mobile ? 0.0 : CFG.diag;
     u.u_cfgVtwist.value = mobile ? 0.0 : CFG.vtwist;
@@ -928,6 +1074,7 @@ function tick(now) {
   floorMesh.visible = false;
 
   if (!mobile) {
+    const fe = easeOut(clamp01(et / 1.4));
     const cardBottomY = cardCenterY - dims.cardScaleY * 0.5 - dims.H * CFG.drop;
     const floorRunDepth = dims.H * CFG.run;
     const camZ = camera.position.z;
@@ -938,6 +1085,7 @@ function tick(now) {
     floorMesh.scale.set(floorWidth, 1, floorTotalLength);
     floorMesh.position.set(0, cardBottomY, (floorNearZ - floorRunDepth) / 2.0);
 
+    glowCur.lerp(glowTgt, 1 - Math.exp(-4 * dt));
     const cellSize = dims.H * CFG.cell;
     const fu = floorMat.uniforms;
     fu.u_leanK.value = 1.0;
@@ -947,22 +1095,29 @@ function tick(now) {
     fu.u_gridF.value.set(floorWidth / cellSize, floorRunDepth / cellSize);
     fu.u_grid.value = CFG.grid;
     fu.u_reflA.value = CFG.refl;
+    fu.u_reflFull.value = 0.4 * fe;
+    fu.u_alpha.value = 0.9 * fe;
+    fu.u_glowC.value.copy(glowCur);
+    fu.u_glowA.value = 0.28 * fe;
+    fu.u_glowW.value = dims.cardScaleX * 0.6;
 
-    if (CFG.refl > 0.001) {
-      const floorY = cardBottomY - dims.H * 0.07;
-      reflectCamera.copy(camera);
-      reflectCamera.position.set(camera.position.x, 2 * floorY - camera.position.y, camera.position.z);
-      reflectCamera.updateMatrixWorld();
+    // Espejo planar real: cámara reflejada respecto al plano del suelo
+    const floorY = cardBottomY;
+    const ry = 2 * floorY - camera.position.y;
+    reflectCamera.copy(camera);
+    reflectCamera.position.set(camera.position.x, ry, camera.position.z);
+    reflectCamera.up.set(0, -1, 0);
+    reflectCamera.lookAt(camera.position.x, ry, camera.position.z - 1);
+    reflectCamera.updateMatrixWorld();
 
-      fu.u_reflVP.value.copy(reflectCamera.matrixWorld).invert().premultiply(reflectCamera.projectionMatrix);
-      fu.u_reflSpread.value = CFG.reflSpread;
-      fu.u_reflLX.value = -dims.W * CFG.reflLight;
+    fu.u_reflVP.value.copy(reflectCamera.matrixWorld).invert().premultiply(reflectCamera.projectionMatrix);
+    fu.u_reflSpread.value = CFG.reflSpread;
+    fu.u_reflLX.value = -dims.W * CFG.reflLight;
 
-      renderer.setRenderTarget(reflectTarget);
-      renderer.clear();
-      renderer.render(scene, reflectCamera);
-      renderer.setRenderTarget(null);
-    }
+    renderer.setRenderTarget(reflectTarget);
+    renderer.clear();
+    renderer.render(scene, reflectCamera);
+    renderer.setRenderTarget(null);
     floorMesh.visible = true;
   }
 
